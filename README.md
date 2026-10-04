@@ -1,14 +1,16 @@
-# Hearth Guests
+# Foyer Guests
+
+*Formerly Hearth Guests. The `hearth_guests` domain and this repository's name are unchanged, so existing installs keep working.*
 
 A Home Assistant custom integration that gives guests temporary, scoped control of your home.
 You create a **pass** (a name, an end time or none, and what the guest may use), then show its
 QR code. The guest scans it with their phone camera and gets a simple control panel in the
-browser (iPhone included), or opens it in the Hearth Android app's guest mode. Guests don't
+browser (iPhone included), or opens it in the Foyer Android app's guest mode. Guests don't
 need a Home Assistant login. When the time is up, access stops.
 
 Everything runs on the Home Assistant box. There is no cloud service and nothing else to host.
 
-The contract between the integration, the Hearth app and the web panel is in
+The contract between the integration, the Foyer app and the web panel is in
 [`API.md`](API.md).
 
 ## Security model
@@ -47,8 +49,8 @@ The contract between the integration, the Hearth app and the web panel is in
 
 1. In HACS, open the menu (⋮) → **Custom repositories**, add
    `https://github.com/xattribution/hearth-guests` with type **Integration**.
-2. Find **Hearth Guests** in HACS, download it, and restart Home Assistant.
-3. Go to **Settings → Devices & services → Add integration → Hearth Guests**.
+2. Find **Foyer Guests** in HACS, download it, and restart Home Assistant.
+3. Go to **Settings → Devices & services → Add integration → Foyer Guests**.
 
 HACS then offers each new release as an update inside Home Assistant.
 
@@ -63,15 +65,15 @@ HACS then offers each new release as an update inside Home Assistant.
    ```
 
 2. Restart Home Assistant.
-3. Go to **Settings → Devices & services → Add integration → Hearth Guests**.
+3. Go to **Settings → Devices & services → Add integration → Foyer Guests**.
 
 You need Home Assistant 2025.3 or newer (tested against 2026.2).
 
 ## Using it
 
-### From Hearth
+### From Foyer
 
-In the Hearth app, open **Settings → Guests**. Pick a preset (*Guest essentials*,
+In the Foyer app, open **Settings → Guests**. Pick a preset (*Guest essentials*,
 *Door & lights*, *House sitter*, *Just the lights*), narrow it to the rooms and devices you
 want, set an end time, and show the QR code. From the same screen you can pause, extend,
 rotate or delete a pass, and see what guests did. Only Home Assistant admins can manage passes.
@@ -90,14 +92,14 @@ the time left, and tiles grouped by room:
 It updates live and falls back to polling if streaming isn't possible. When the pass ends it
 says so: "Your access has ended — ask your host for a new code."
 
-The QR link uses the base URL Hearth sends when it asks for the pass, or else Home
+The QR link uses the base URL Foyer sends when it asks for the pass, or else Home
 Assistant's internal URL. If the link points somewhere the guest's phone can't reach, set the
 local network URL under **Settings → System → Network** in Home Assistant.
 
 ### Sharing the Android app
 
-Hearth can upload its own APK to the integration from its guest settings (an admin-only,
-chunked upload; see `API.md`). Android guests then see **Get the Android app** and **Open in Hearth** buttons in the web panel. The APK
+Foyer can upload its own APK to the integration from its guest settings (an admin-only,
+chunked upload; see `API.md`). Android guests then see **Get the Android app** and **Open in Foyer** buttons in the web panel. The APK
 is stored under `/config/.storage/hearth_guests/` and served only on the LAN.
 
 ## Automations
@@ -150,7 +152,7 @@ automation:
 - The panel uses plain HTTP if your Home Assistant does. Anyone on your Wi-Fi who can sniff
   traffic could see a token, so treat your guest network the way you'd treat a spare key.
 - Guests act through Home Assistant without a user, so the logbook shows their actions with no
-  user. Use the activity list in Hearth or the `hearth_guests_action` event to see who did what.
+  user. Use the activity list in Foyer or the `hearth_guests_action` event to see who did what.
 
 ## Development
 
@@ -174,6 +176,6 @@ pip install pytest-homeassistant-custom-component && pytest   # everything (Pyth
 CI runs both, plus hassfest and HACS validation (`.github/workflows/`).
 
 This repository is published automatically from the `hearth-guests/` folder of the private
-Hearth monorepo, where the Android app is developed against the same [`API.md`](API.md).
+Foyer monorepo, where the Android app is developed against the same [`API.md`](API.md).
 Issues and pull requests are welcome here; changes are carried back by hand. Releases are
 cut automatically when `manifest.json`'s version changes.

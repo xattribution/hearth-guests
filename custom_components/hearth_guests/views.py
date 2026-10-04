@@ -65,7 +65,7 @@ LANDING_HEADERS = {
 }
 LAN_ONLY_HTML = (
     "<!doctype html><meta charset=utf-8><meta name=viewport "
-    'content="width=device-width,initial-scale=1"><title>Hearth</title>'
+    'content="width=device-width,initial-scale=1"><title>Foyer</title>'
     "<p style=\"font:17px system-ui;margin:2em\">Guest access only works on the home "
     "Wi-Fi. Connect to the home network and try again.</p>"
 )
@@ -168,7 +168,7 @@ class GuestLandingView(HomeAssistantView):
         hub = get_hub(hass)
         if hub is None:
             return web.Response(
-                text="Hearth Guests is not set up.", status=503, headers=NO_STORE
+                text="Foyer Guests is not set up.", status=503, headers=NO_STORE
             )
         # The page itself holds no data; off the LAN it is served only while some pass
         # may be used away from home.
@@ -454,7 +454,7 @@ class OwnerApkUploadView(HomeAssistantView):
             return self.json({"received": result["received"]})
         hub.apk_meta = result["meta"]
         _LOGGER.info(
-            "Shared Hearth APK %s (%s bytes)",
+            "Shared Foyer APK %s (%s bytes)",
             result["meta"]["version_name"],
             result["received"],
         )

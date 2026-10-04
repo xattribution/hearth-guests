@@ -37,6 +37,9 @@ class ActiveGuestsSensor(SensorEntity):
     def __init__(self, hub: GuestHub, entry_id: str) -> None:
         """Initialize."""
         self._hub = hub
+        # Kept from the Hearth Guests days so automations and the docs keep working; the
+        # device is named after the product (Foyer Guests) instead.
+        self.entity_id = "sensor.hearth_guests_active"
         self._attr_unique_id = f"{entry_id}_active"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},

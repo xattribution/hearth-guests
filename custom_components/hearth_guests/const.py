@@ -10,8 +10,8 @@ from datetime import timedelta
 from typing import Final
 
 DOMAIN: Final = "hearth_guests"
-NAME: Final = "Hearth Guests"
-VERSION: Final = "0.2.0"
+NAME: Final = "Foyer Guests"
+VERSION: Final = "0.2.1"
 
 # Bump together with API.md and the app's GuestApi.kt.
 API_VERSION: Final = 1

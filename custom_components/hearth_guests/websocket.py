@@ -61,7 +61,7 @@ def _with_hub(
     ) -> None:
         hub = get_hub(hass)
         if hub is None:
-            connection.send_error(msg["id"], ERR_NOT_LOADED, "Hearth Guests is not loaded")
+            connection.send_error(msg["id"], ERR_NOT_LOADED, "Foyer Guests is not loaded")
             return
         try:
             await func(hass, connection, msg, hub)

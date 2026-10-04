@@ -1,6 +1,6 @@
-# Hearth Guests — API contract
+# Foyer Guests — API contract
 
-The contract between the `hearth_guests` Home Assistant integration, the Hearth Android app
+The contract between the `hearth_guests` Home Assistant integration, the Foyer Android app
 (owner screens and guest mode) and the built-in web guest panel. All three are built against
 this file. If the contract changes, change this file first, then bump `API_VERSION` in the
 integration's `const.py` and in the app's `data/guests/GuestModels.kt`.
@@ -153,7 +153,7 @@ return 503 `{"error": "not_loaded"}`.
 | `GET /api/hearth_guests/guest/events` | token | Server-sent events (`text/event-stream`), described below |
 | `POST /api/hearth_guests/guest/action` | token | Body `{entity_id, action, value?}`. Returns `{ok: true}`. Returns 403 `{error: "not_allowed"}` when the action is outside the scope, and 400 `{error: "bad_value"}` for an invalid value or a malformed body (413 when the body is over 4 KiB). Returns 502 `{error: "failed"}` when Home Assistant rejects or fails the service call. |
 | `GET /api/hearth_guests/app.json` | none (LAN) | `{version_name, version_code, size, sha256}`, or 404 when no APK has been shared |
-| `GET /api/hearth_guests/app.apk` | none (LAN) | The Hearth APK the owner shared (`application/vnd.android.package-archive`, `Content-Disposition: attachment; filename="hearth.apk"`) |
+| `GET /api/hearth_guests/app.apk` | none (LAN) | The Foyer APK the owner shared (`application/vnd.android.package-archive`, `Content-Disposition: attachment; filename="hearth.apk"`) |
 | `POST /api/hearth_guests/owner/apk` | HA bearer, admin | Chunked upload. Query `offset`, `total`, `version_code`, `version_name`; the body is raw bytes, at most 4 MiB per chunk. Returns `{received}`, and on the final chunk `{received, done: true, sha256}`. The final file must start with `PK` and be at most 200 MiB. Errors: 409 `{error: "bad_offset", received}` (resume from `received`), 400 `{error: "not_apk" \| "too_large" \| "bad_request"}`, 413 `{error: "chunk_too_large"}`, 403 `{error: "admin_required"}`. `offset=0` starts over. |
 
 ### Events stream
@@ -210,9 +210,9 @@ no user data.
 
 - The QR encodes the landing URL: `http://<lan-host>:8123/hearth-guest#t=<token>`. Scanned
   with a phone camera, it opens the web panel, which works on any phone (iPhone included).
-  The panel also offers "Get the Android app" (when an APK is shared) and "Open in Hearth".
-- "Open in Hearth" is `hearth://guest?b=<urlencoded base url>&t=<token>`.
-- The Hearth app's guest scanner accepts either form. From the landing URL, the base URL is
+  The panel also offers "Get the Android app" (when an APK is shared) and "Open in Foyer".
+- "Open in Foyer" is `hearth://guest?b=<urlencoded base url>&t=<token>`.
+- The Foyer app's guest scanner accepts either form. From the landing URL, the base URL is
   scheme + host + port.
 
 ## Features

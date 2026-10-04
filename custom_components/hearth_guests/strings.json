@@ -2,18 +2,18 @@
   "config": {
     "step": {
       "user": {
-        "title": "Hearth Guests",
-        "description": "Give guests temporary, scoped control of your home from their phone. Passes are created in the Hearth app (Settings → Guests). Guest access works on your local network only."
+        "title": "Foyer Guests",
+        "description": "Give guests temporary, scoped control of your home from their phone. Passes are created in the Foyer app (Settings → Guests). Guest access works on your local network only."
       }
     },
     "abort": {
-      "single_instance_allowed": "Hearth Guests is already set up."
+      "single_instance_allowed": "Foyer Guests is already set up."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Hearth Guests",
+        "title": "Foyer Guests",
         "data": {
           "lan_only": "Local network only"
         },
