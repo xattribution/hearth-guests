@@ -1,0 +1,1136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0c0a08">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<title>Hearth</title>
+<style>
+:root {
+  --bg: #0c0a08;
+  --glass: rgba(255, 244, 230, 0.07);
+  --glass-hi: rgba(255, 244, 230, 0.12);
+  --stroke: rgba(255, 244, 230, 0.09);
+  --text: #f6f1ea;
+  --muted: rgba(246, 241, 234, 0.62);
+  --faint: rgba(246, 241, 234, 0.38);
+  --ember: #ff9f43;
+  --ember-soft: rgba(255, 159, 67, 0.18);
+  --amber: #ffc94a;
+  --amber-soft: rgba(255, 201, 74, 0.17);
+  --cool: #5ac8fa;
+  --cool-soft: rgba(90, 200, 250, 0.16);
+  --danger: #ff5f57;
+  --radius: 20px;
+  --gutter: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI",
+    Roboto, "Helvetica Neue", system-ui, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Fixed warm glow (background-attachment: fixed is unreliable on iOS). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(70vmax 55vmax at 18% -8%, rgba(255, 150, 60, 0.26), transparent 62%),
+    radial-gradient(60vmax 50vmax at 105% 12%, rgba(255, 105, 50, 0.12), transparent 60%),
+    radial-gradient(80vmax 60vmax at 50% 115%, rgba(255, 170, 90, 0.08), transparent 60%),
+    var(--bg);
+}
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 28px) calc(env(safe-area-inset-right, 0px) + var(--gutter))
+    calc(env(safe-area-inset-bottom, 0px) + 96px) calc(env(safe-area-inset-left, 0px) + var(--gutter));
+}
+button, a.btn, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; border-radius: 12px; }
+
+/* Header */
+.eyebrow { margin: 0 0 4px; color: var(--muted); font-size: 15px; font-weight: 600; letter-spacing: 0.01em; }
+h1 { margin: 0; font-size: clamp(30px, 8vw, 40px); font-weight: 700; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.header-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 13px; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--stroke);
+  -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
+  font-size: 14px; font-weight: 600; color: var(--muted);
+}
+.pill.soon { color: var(--ember); background: var(--ember-soft); }
+.live { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; }
+.live.on { background: #5bd38b; box-shadow: 0 0 0 3px rgba(91, 211, 139, 0.18); }
+.app-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+a.btn, button.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 10px 18px; border-radius: 14px;
+  border: 1px solid var(--stroke); background: var(--glass-hi);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  text-decoration: none; font-weight: 600; font-size: 15px;
+}
+a.btn.primary, button.btn.primary { background: var(--ember); border-color: transparent; color: #1d1209; }
+
+/* Areas and tiles */
+section.area { margin-top: 30px; }
+h2 { margin: 0 0 12px 4px; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.grid { display: grid; grid-template-columns: 1fr; grid-auto-flow: row dense; gap: 12px; }
+@media (min-width: 360px) {
+  .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .tile.wide { grid-column: span 2; }
+}
+.tile {
+  position: relative;
+  display: flex; flex-direction: column; gap: 12px;
+  min-height: 118px; padding: 14px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--stroke);
+  -webkit-backdrop-filter: blur(22px) saturate(150%); backdrop-filter: blur(22px) saturate(150%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
+}
+.tile.on { background: var(--ember-soft); border-color: rgba(255, 159, 67, 0.28); }
+.tile.light.on { background: var(--amber-soft); border-color: rgba(255, 201, 74, 0.3); }
+.tile.cool { background: var(--cool-soft); border-color: rgba(90, 200, 250, 0.28); }
+.tile.unavailable { opacity: 0.5; }
+.tile.armed { border-color: var(--ember); box-shadow: 0 0 0 1px var(--ember), 0 10px 30px rgba(0, 0, 0, 0.25); }
+.tile-main {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  width: 100%; flex: 1; padding: 0; margin: 0;
+  background: none; border: 0; text-align: left;
+}
+.tile-main:active:not(:disabled) { transform: scale(0.98); }
+.tile-head { display: flex; align-items: flex-start; gap: 10px; width: 100%; }
+.bubble {
+  display: inline-grid; place-items: center; flex: none;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255, 244, 230, 0.1); color: var(--muted);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+.tile.on .bubble { background: var(--ember); color: #1d1209; }
+.tile.light.on .bubble { background: var(--amber); color: #2a1d02; }
+.tile.cool .bubble { background: var(--cool); color: #04202c; }
+.tile.heat .bubble { background: var(--ember); color: #1d1209; }
+.labels { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.name { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.status { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.tile.armed .status { color: var(--ember); font-weight: 600; }
+.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.ic.fill { fill: currentColor; stroke: none; }
+
+/* Controls */
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.row.center { justify-content: center; }
+.icon-btn {
+  display: inline-grid; place-items: center;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255, 244, 230, 0.1); border: 1px solid var(--stroke);
+}
+.icon-btn.big { width: 52px; height: 52px; }
+.tile.cover .row { gap: 6px; flex-wrap: nowrap; }
+.tile.cover .icon-btn { width: 40px; height: 40px; }
+.icon-btn[aria-pressed="true"] { background: var(--ember); color: #1d1209; border-color: transparent; }
+.icon-btn:disabled, .chip:disabled { opacity: 0.4; }
+.target { min-width: 84px; text-align: center; font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  min-height: 34px; padding: 6px 12px; border-radius: 999px;
+  background: rgba(255, 244, 230, 0.08); border: 1px solid var(--stroke);
+  font-size: 14px; font-weight: 600; color: var(--muted);
+}
+.chip[aria-pressed="true"] { background: var(--text); color: #17110b; border-color: transparent; }
+.chip.cool[aria-pressed="true"] { background: var(--cool); color: #04202c; }
+.chip.heat[aria-pressed="true"] { background: var(--ember); color: #1d1209; }
+.run { min-height: 40px; padding: 8px 18px; border-radius: 999px; background: var(--ember); color: #1d1209; border: 0; font-weight: 700; align-self: flex-start; }
+.range {
+  --pct: 50%;
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 30px; margin: 0; border-radius: 15px;
+  background: linear-gradient(to right, var(--fill, var(--ember)) 0 var(--pct), rgba(255, 244, 230, 0.12) var(--pct) 100%);
+  touch-action: pan-y;
+}
+.tile.light .range { --fill: var(--amber); }
+.range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 30px; height: 30px; border-radius: 50%; background: #fff; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4); }
+.range::-moz-range-thumb { width: 28px; height: 28px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4); }
+.range::-moz-range-track { background: transparent; }
+.range-row { display: flex; align-items: center; gap: 10px; }
+.range-value { min-width: 42px; text-align: right; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.now-playing { font-size: 13px; color: var(--faint); overflow-wrap: anywhere; }
+.hidden { display: none !important; }
+
+/* Screens */
+.screen { min-height: 70vh; display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; padding: 24px 8px; }
+.screen .bubble { width: 64px; height: 64px; background: var(--ember-soft); color: var(--ember); }
+.screen .bubble .ic { width: 32px; height: 32px; }
+.screen h1 { font-size: clamp(24px, 6.5vw, 32px); max-width: 22ch; }
+.screen p { margin: 0; color: var(--muted); font-size: 17px; max-width: 34ch; }
+.empty { margin-top: 36px; color: var(--muted); font-size: 16px; }
+.spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid rgba(255, 244, 230, 0.15); border-top-color: var(--ember); animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.toast {
+  position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  transform: translate(-50%, 24px); opacity: 0; pointer-events: none;
+  max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 14px;
+  background: rgba(40, 30, 24, 0.92); border: 1px solid var(--stroke);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  font-size: 15px; font-weight: 600; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.error { border-color: rgba(255, 95, 87, 0.5); color: #ffd9d6; }
+.toast.error::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 10px; border-radius: 50%; background: var(--danger); vertical-align: 1px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  .tile-main:active:not(:disabled) { transform: none; }
+}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<noscript><p style="padding:24px">This page needs JavaScript.</p></noscript>
+<script>
+(function () {
+  "use strict";
+
+  var API = "/api/hearth_guests";
+  var TOKEN_KEY = "hearth_guest_token";
+  var POLL_MS = 5000;
+  var SVG_NS = "http://www.w3.org/2000/svg";
+
+  // ---- state ---------------------------------------------------------------------------
+  var token = readToken();
+  var session = null;          // last /session payload
+  var entities = new Map();    // entity_id -> GuestEntity
+  var tiles = new Map();       // entity_id -> { el, update(entity) }
+  var layoutKey = "";          // areas + entity ids; a change means a full re-render
+  var skew = 0;                // server clock - client clock, ms
+  var ended = false;
+  var appInfo = null;          // app.json payload on Android, when an APK is shared
+  var live = false;
+  var streamCtrl = null;
+  var streamFails = 0;
+  var reconnectTimer = null;
+  var pollTimer = null;
+  var sessionReloadTimer = null;
+  var pill = null;
+  var liveDot = null;
+  var app = document.getElementById("app");
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+
+  function readToken() {
+    var found = null;
+    var match = /(?:^#|&)t=([^&]+)/.exec(location.hash || "");
+    if (match) {
+      try { found = decodeURIComponent(match[1]); } catch (e) { found = null; }
+      if (found) {
+        try { localStorage.setItem(TOKEN_KEY, found); } catch (e) { /* private mode */ }
+      }
+      // Strip the fragment so the token is not left in the address bar or history.
+      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
+    }
+    if (!found) {
+      try { found = localStorage.getItem(TOKEN_KEY); } catch (e) { found = null; }
+    }
+    return found || null;
+  }
+
+  function forgetToken() {
+    try { localStorage.removeItem(TOKEN_KEY); } catch (e) { /* ignore */ }
+  }
+
+  // ---- DOM helpers (text only ever goes in through textContent) ------------------------
+  function h(tag, props) {
+    var el = document.createElement(tag);
+    if (props) {
+      Object.keys(props).forEach(function (key) {
+        var value = props[key];
+        if (value === null || value === undefined || value === false) return;
+        if (key === "class") el.className = value;
+        else if (key === "text") el.textContent = value;
+        else if (key.indexOf("on") === 0) el.addEventListener(key.slice(2), value);
+        else el.setAttribute(key, value === true ? "" : String(value));
+      });
+    }
+    for (var i = 2; i < arguments.length; i++) append(el, arguments[i]);
+    return el;
+  }
+  function append(el, child) {
+    if (child === null || child === undefined || child === false) return;
+    if (Array.isArray(child)) { child.forEach(function (c) { append(el, c); }); return; }
+    el.appendChild(typeof child === "string" ? document.createTextNode(child) : child);
+  }
+
+  var ICONS = {
+    bulb: ["M9 18h6", "M10 21h4", "M12 3a6 6 0 0 0-3.8 10.6c.8.7 1.3 1.5 1.3 2.4h5c0-.9.5-1.7 1.3-2.4A6 6 0 0 0 12 3z"],
+    power: ["M12 3v8", "M6.6 6.6a7.5 7.5 0 1 0 10.8 0"],
+    fan: ["M12 12c-1-3.5-.5-8 2.5-8.5 2.8-.4 3.5 3.8-2.5 8.5z", "M12 12c3.5-1 8-.5 8.5 2.5.4 2.8-3.8 3.5-8.5-2.5z", "M12 12c1 3.5.5 8-2.5 8.5-2.8.4-3.5-3.8 2.5-8.5z", "M12 12c-3.5 1-8 .5-8.5-2.5-.4-2.8 3.8-3.5 8.5 2.5z"],
+    thermo: ["M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z", "M12 10v6"],
+    lock: ["M6.5 11h11v9.5h-11z", "M8.5 11V7.5a3.5 3.5 0 0 1 7 0V11"],
+    unlock: ["M6.5 11h11v9.5h-11z", "M8.5 11V7.5a3.5 3.5 0 0 1 6.8-1.2"],
+    blinds: ["M4 4h16", "M5.5 4v12h13V4", "M5.5 8h13", "M5.5 12h13", "M12 16v4"],
+    music: ["M9 18V5.5l11-2V16", "M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0z", "M20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"],
+    sparkle: ["M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z", "M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"],
+    clock: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 7v5l3 2"],
+    wifi: ["M2.5 9a14 14 0 0 1 19 0", "M5.5 12.5a9.5 9.5 0 0 1 13 0", "M8.7 16a5 5 0 0 1 6.6 0", "M12 19.5h.01"],
+    qr: ["M4 4h6v6H4z", "M14 4h6v6h-6z", "M4 14h6v6H4z", "M14 14h2v2h-2z", "M18 14h2", "M14 18h2", "M18 18h2v2"],
+    minus: ["M5 12h14"],
+    plus: ["M12 5v14", "M5 12h14"],
+    up: ["M6 15l6-6 6 6"],
+    down: ["M6 9l6 6 6-6"],
+    stop: { fill: true, d: ["M7 7h10v10H7z"] },
+    play: { fill: true, d: ["M8 5.5v13l11-6.5z"] },
+    pause: { fill: true, d: ["M7 5h3.5v14H7z", "M13.5 5H17v14h-3.5z"] },
+    prev: { fill: true, d: ["M18 6v12l-8.5-6z", "M6 6h2v12H6z"] },
+    next: { fill: true, d: ["M6 6v12l8.5-6z", "M16 6h2v12h-2z"] },
+    speaker: ["M4 9.5h4L13 5v14l-5-4.5H4z", "M16.5 9a4 4 0 0 1 0 6"],
+    muted: ["M4 9.5h4L13 5v14l-5-4.5H4z", "M17 9.5l4 5", "M21 9.5l-4 5"],
+    android: ["M7 10h10v8a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z", "M7 9a5 5 0 0 1 10 0", "M9.5 19v2.5", "M14.5 19v2.5", "M8 4.5l1.3 1.8", "M16 4.5l-1.3 1.8"],
+    open: ["M14 4h6v6", "M20 4l-9 9", "M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"]
+  };
+
+  function icon(name) {
+    var spec = ICONS[name];
+    var paths = Array.isArray(spec) ? spec : spec.d;
+    var svg = document.createElementNS(SVG_NS, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    svg.setAttribute("class", Array.isArray(spec) ? "ic" : "ic fill");
+    paths.forEach(function (d) {
+      var path = document.createElementNS(SVG_NS, "path");
+      path.setAttribute("d", d);
+      svg.appendChild(path);
+    });
+    return svg;
+  }
+
+  function toast(message) {
+    toastEl.textContent = message;
+    toastEl.className = "toast show error";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.className = "toast"; }, 3800);
+  }
+
+  // ---- HTTP ----------------------------------------------------------------------------
+  function ApiError(status, data) {
+    this.status = status;
+    this.data = data || {};
+    this.code = (data && data.error) || (status ? "http_" + status : "network");
+  }
+
+  function api(path, options) {
+    options = options || {};
+    var headers = { "X-Hearth-Guest": token || "" };
+    if (options.body) headers["Content-Type"] = "application/json";
+    return fetch(API + path, {
+      method: options.method || "GET",
+      headers: headers,
+      body: options.body,
+      cache: "no-store",
+      credentials: "omit"
+    }).then(function (res) {
+      return res.json().catch(function () { return null; }).then(function (data) {
+        if (!res.ok) throw new ApiError(res.status, data);
+        return data;
+      });
+    }, function () {
+      throw new ApiError(0, null);
+    });
+  }
+
+  // Errors that end the session view. Returns true when handled.
+  function handleFatal(err) {
+    if (!(err instanceof ApiError)) return false;
+    if (err.status === 401) { forgetToken(); showEnded("invalid"); return true; }
+    if (err.status === 403 && (err.code === "expired" || err.code === "paused")) { showEnded(err.code); return true; }
+    if (err.status === 403 && err.code === "lan_only") { showBlocked("lan"); return true; }
+    if (err.status === 429) { showBlocked("rate"); return true; }
+    return false;
+  }
+
+  // ---- session -------------------------------------------------------------------------
+  function loadSession() {
+    return api("/guest/session").then(applySession);
+  }
+
+  function scheduleSessionReload() {
+    clearTimeout(sessionReloadTimer);
+    sessionReloadTimer = setTimeout(function () {
+      loadSession().catch(function (err) { if (!handleFatal(err)) { /* next event or poll retries */ } });
+    }, 250);
+  }
+
+  function applySession(data) {
+    if (ended) return;
+    session = data;
+    var serverNow = Date.parse(data.server_time);
+    if (!isNaN(serverNow)) skew = serverNow - Date.now();
+    entities = new Map();
+    (data.entities || []).forEach(function (e) { entities.set(e.entity_id, e); });
+    var key = JSON.stringify([
+      (data.areas || []).map(function (a) { return [a.area_id, a.name]; }),
+      (data.entities || []).map(function (e) { return [e.entity_id, e.area_id, e.name, e.domain]; }),
+      appInfo ? 1 : 0
+    ]);
+    if (key !== layoutKey || !pill) {
+      layoutKey = key;
+      renderPanel();
+    } else {
+      renderHeader();
+      entities.forEach(function (_, id) { renderEntity(id); });
+    }
+  }
+
+  // ---- time pill ------------------------------------------------------------------------
+  function now() { return Date.now() + skew; }
+
+  function formatEnd(date) {
+    var days = (date.getTime() - now()) / 86400000;
+    var opts = days > 6
+      ? { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }
+      : { weekday: "short", hour: "numeric", minute: "2-digit" };
+    try { return new Intl.DateTimeFormat(undefined, opts).format(date); }
+    catch (e) { return date.toLocaleString(); }
+  }
+
+  function formatLeft(ms) {
+    if (ms <= 0) return "ending now";
+    var mins = Math.ceil(ms / 60000);
+    var d = Math.floor(mins / 1440), hrs = Math.floor((mins % 1440) / 60), m = mins % 60;
+    if (d > 0) return d + "d " + hrs + "h left";
+    if (hrs > 0) return hrs + "h " + m + "m left";
+    return m + "m left";
+  }
+
+  function renderHeader() {
+    if (!session || !pill) return;
+    var p = session.pass || {};
+    var heading = document.getElementById("hello");
+    if (heading) heading.textContent = "Hi " + (p.name || "there");
+    var home = document.getElementById("home-name");
+    if (home) home.textContent = session.home_name || "";
+    var text = "No end date";
+    var soon = false;
+    if (!p.permanent && p.expires_at) {
+      var end = new Date(p.expires_at);
+      var left = end.getTime() - now();
+      text = "Until " + formatEnd(end) + " · " + formatLeft(left);
+      soon = left < 3600000;
+      if (left <= 0) scheduleSessionReload(); // the server will answer "expired"
+    }
+    pill.lastChild.textContent = text;
+    pill.classList.toggle("soon", soon);
+  }
+
+  function setLive(on) {
+    live = on;
+    if (liveDot) {
+      liveDot.classList.toggle("on", on);
+      liveDot.setAttribute("title", on ? "Live" : "Reconnecting");
+    }
+  }
+
+  // ---- screens --------------------------------------------------------------------------
+  function clearApp() {
+    while (app.firstChild) app.removeChild(app.firstChild);
+    tiles = new Map();
+    pill = null;
+    liveDot = null;
+  }
+
+  function screen(iconName, title, text, buttons) {
+    clearApp();
+    app.appendChild(h("div", { class: "screen" },
+      h("span", { class: "bubble" }, icon(iconName)),
+      h("h1", { text: title }),
+      text ? h("p", { text: text }) : null,
+      buttons && buttons.length ? h("div", { class: "row center" }, buttons) : null));
+  }
+
+  function stopAll() {
+    if (streamCtrl) { try { streamCtrl.abort(); } catch (e) { /* ignore */ } streamCtrl = null; }
+    clearTimeout(reconnectTimer);
+    clearTimeout(sessionReloadTimer);
+    stopPolling();
+    setLive(false);
+  }
+
+  function retryButton(label) {
+    return h("button", { class: "btn primary", type: "button", onclick: restart }, label || "Try again");
+  }
+
+  function showEnded(reason) {
+    ended = true;
+    stopAll();
+    session = null;
+    layoutKey = "";
+    var note = reason === "paused" ? "Your host has paused your pass for now." : null;
+    screen("clock", "Your access has ended",
+      (note ? note + " " : "") + "Ask your host for a new code.",
+      reason === "invalid" ? [] : [retryButton()]);
+  }
+
+  function showBlocked(kind) {
+    ended = true;
+    stopAll();
+    layoutKey = "";
+    if (kind === "lan") {
+      screen("wifi", "Connect to the home Wi‑Fi", "Your pass only works on your host's home network.", [retryButton()]);
+    } else {
+      screen("clock", "Too many attempts", "Please wait a few minutes, then try again.", [retryButton()]);
+    }
+  }
+
+  function showNoCode() {
+    screen("qr", "Scan your host's code", "Open the camera on your phone and point it at the QR code your host shows you.", []);
+  }
+
+  function showOffline() {
+    screen("wifi", "Can't reach the house", "Check that you're on the home Wi‑Fi. Trying again…", [retryButton()]);
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(restart, 5000);
+  }
+
+  function showLoading() {
+    clearApp();
+    app.appendChild(h("div", { class: "screen", "aria-busy": "true" },
+      h("div", { class: "spinner", role: "progressbar", "aria-label": "Connecting" }),
+      h("p", { text: "Connecting…" })));
+  }
+
+  // ---- panel ----------------------------------------------------------------------------
+  function renderPanel() {
+    clearApp();
+    var p = session.pass || {};
+    liveDot = h("span", { class: "live" + (live ? " on" : ""), title: live ? "Live" : "Reconnecting" });
+    pill = h("span", { class: "pill" }, liveDot, h("span"));
+    var header = h("header", null,
+      h("p", { class: "eyebrow", id: "home-name", text: session.home_name || "" }),
+      h("h1", { id: "hello", text: "Hi " + (p.name || "there") }),
+      h("div", { class: "header-row" }, pill));
+    app.appendChild(header);
+
+    if (appInfo && token) {
+      var deepLink = "hearth://guest?b=" + encodeURIComponent(location.origin) + "&t=" + encodeURIComponent(token);
+      app.appendChild(h("div", { class: "app-links" },
+        h("a", { class: "btn primary", href: deepLink }, icon("open"), "Open in Hearth"),
+        h("a", { class: "btn", href: API + "/app.apk", download: "hearth.apk" }, icon("android"), "Get the Android app")));
+    }
+
+    var groups = new Map();
+    (session.areas || []).forEach(function (a) { groups.set(a.area_id, { name: a.name, items: [] }); });
+    var other = { name: "Other", items: [] };
+    entities.forEach(function (e) {
+      var group = (e.area_id && groups.get(e.area_id)) || other;
+      group.items.push(e);
+    });
+    var sections = [];
+    groups.forEach(function (g) { sections.push(g); });
+    sections.push(other);
+
+    var any = false;
+    sections.forEach(function (group) {
+      if (!group.items.length) return;
+      any = true;
+      group.items.sort(function (a, b) { return a.name.localeCompare(b.name); });
+      var grid = h("div", { class: "grid" });
+      group.items.forEach(function (e) {
+        var tile = makeTile(e);
+        tiles.set(e.entity_id, tile);
+        tile.update(e);
+        grid.appendChild(tile.el);
+      });
+      var headingId = "area-" + sections.indexOf(group);
+      app.appendChild(h("section", { class: "area", "aria-labelledby": headingId },
+        h("h2", { id: headingId, text: group.name }), grid));
+    });
+    if (!any) {
+      app.appendChild(h("p", { class: "empty", text: "Nothing to control yet. Ask your host to add some devices to your pass." }));
+    }
+    renderHeader();
+  }
+
+  function renderEntity(id) {
+    var tile = tiles.get(id);
+    var entity = entities.get(id);
+    if (tile && entity) tile.update(entity);
+  }
+
+  // ---- actions ----------------------------------------------------------------------------
+  function clone(e) { return JSON.parse(JSON.stringify(e)); }
+
+  function errorMessage(err, entity) {
+    var name = entity ? entity.name : "that";
+    switch (err.code) {
+      case "not_allowed": return "That isn't part of your pass.";
+      case "bad_value": return "That setting isn't available.";
+      case "failed": return "Couldn't reach " + name + ".";
+      case "network": return "Connection problem. Try again.";
+      default: return "Something went wrong. Try again.";
+    }
+  }
+
+  // Send an action with an optimistic update; roll back if it fails.
+  function act(id, action, value, optimistic) {
+    var before = entities.get(id);
+    var guess = null;
+    if (optimistic && before) {
+      guess = optimistic(clone(before));
+      entities.set(id, guess);
+      renderEntity(id);
+    }
+    var body = { entity_id: id, action: action };
+    if (value !== undefined) body.value = value;
+    return api("/guest/action", { method: "POST", body: JSON.stringify(body) }).then(function () {
+      return true;
+    }, function (err) {
+      if (guess && entities.get(id) === guess) {
+        entities.set(id, before);
+        renderEntity(id);
+      }
+      if (!handleFatal(err)) toast(errorMessage(err, before));
+      return false;
+    });
+  }
+
+  function has(e, action) { return (e.actions || []).indexOf(action) >= 0; }
+  function unavailable(e) { return e.state === "unavailable" || e.state === "unknown"; }
+  function titleCase(s) { s = String(s || "").replace(/_/g, " "); return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // A slider that commits on release and ignores server updates while held.
+  function slider(label, min, max, step, onCommit, suffix) {
+    var input = h("input", { class: "range", type: "range", min: min, max: max, step: step, "aria-label": label });
+    var out = h("span", { class: "range-value", "aria-hidden": "true" });
+    var holding = false;
+    function paint() {
+      var pct = ((Number(input.value) - min) / (max - min)) * 100;
+      input.style.setProperty("--pct", pct + "%");
+      out.textContent = Math.round(Number(input.value)) + (suffix || "");
+      input.setAttribute("aria-valuetext", out.textContent);
+    }
+    input.addEventListener("pointerdown", function () { holding = true; });
+    input.addEventListener("pointerup", function () { holding = false; });
+    input.addEventListener("pointercancel", function () { holding = false; });
+    input.addEventListener("blur", function () { holding = false; });
+    input.addEventListener("input", paint);
+    input.addEventListener("change", function () { holding = false; onCommit(Number(input.value)); });
+    return {
+      el: h("div", { class: "range-row" }, input, out),
+      set: function (v) {
+        if (holding || document.activeElement === input && input.matches(":active")) return;
+        input.value = v;
+        paint();
+      }
+    };
+  }
+
+  function head(iconName, statusLive) {
+    var bubble = h("span", { class: "bubble" }, icon(iconName));
+    var name = h("span", { class: "name" });
+    var status = h("span", { class: "status", "aria-live": statusLive ? "polite" : null });
+    return { el: h("span", { class: "tile-head" }, bubble, h("span", { class: "labels" }, name, status)), bubble: bubble, name: name, status: status };
+  }
+
+  function setIcon(bubble, iconName) {
+    if (bubble.dataset.icon === iconName) return;
+    bubble.dataset.icon = iconName;
+    while (bubble.firstChild) bubble.removeChild(bubble.firstChild);
+    bubble.appendChild(icon(iconName));
+  }
+
+  function makeTile(e) {
+    switch (e.domain) {
+      case "light": return toggleTile(e, "bulb", "set_brightness", "brightness_pct");
+      case "fan": return toggleTile(e, "fan", "set_percentage", "percentage");
+      case "switch":
+      case "input_boolean": return toggleTile(e, "power", null, null);
+      case "lock": return lockTile(e);
+      case "climate": return climateTile(e);
+      case "cover": return coverTile(e);
+      case "media_player": return mediaTile(e);
+      case "scene": return sceneTile(e);
+      default: return infoTile(e);
+    }
+  }
+
+  // Lights, fans, switches: tap to toggle; lights/fans get a level slider when on.
+  function toggleTile(e0, iconName, levelAction, levelAttr) {
+    var id = e0.entity_id;
+    var top = head(iconName);
+    var main = h("button", { class: "tile-main", type: "button" }, top.el);
+    var level = null;
+    if (levelAction) {
+      level = slider(e0.name + (e0.domain === "light" ? " brightness" : " speed"), 1, 100, 1, function (v) {
+        act(id, levelAction, v, function (x) { x.state = "on"; x.attributes[levelAttr] = v; return x; });
+      }, "%");
+    }
+    var el = h("div", { class: "tile " + e0.domain }, main, level ? level.el : null);
+    main.addEventListener("click", function () {
+      var cur = entities.get(id);
+      var on = cur.state === "on";
+      var action = has(cur, "toggle") ? "toggle" : (on ? "turn_off" : "turn_on");
+      act(id, action, undefined, function (x) { x.state = on ? "off" : "on"; return x; });
+    });
+    return {
+      el: el,
+      update: function (e) {
+        var on = e.state === "on";
+        var pct = e.attributes[levelAttr];
+        top.name.textContent = e.name;
+        top.status.textContent = unavailable(e) ? "Unavailable"
+          : on ? (typeof pct === "number" && levelAction ? "On · " + pct + "%" : "On") : "Off";
+        el.classList.toggle("on", on);
+        el.classList.toggle("unavailable", unavailable(e));
+        main.disabled = unavailable(e);
+        main.setAttribute("aria-pressed", on ? "true" : "false");
+        if (level) {
+          var show = on && has(e, levelAction);
+          level.el.classList.toggle("hidden", !show);
+          if (show) level.set(typeof pct === "number" ? Math.max(1, pct) : 100);
+        }
+      }
+    };
+  }
+
+  // Locks: unlocking needs a confirming second tap.
+  function lockTile(e0) {
+    var id = e0.entity_id;
+    var top = head("lock", true);
+    var main = h("button", { class: "tile-main", type: "button" }, top.el);
+    var el = h("div", { class: "tile lock" }, main);
+    var armed = false, armTimer = null, last = e0;
+    var LABELS = { locked: "Locked", unlocked: "Unlocked", locking: "Locking…", unlocking: "Unlocking…", jammed: "Jammed", open: "Open", opening: "Opening…" };
+    function disarm() {
+      armed = false;
+      clearTimeout(armTimer);
+      el.classList.remove("armed");
+      paint(last);
+    }
+    function paint(e) {
+      var locked = e.state === "locked" || e.state === "locking";
+      top.name.textContent = e.name;
+      top.status.textContent = armed ? "Tap again to unlock" : unavailable(e) ? "Unavailable" : (LABELS[e.state] || titleCase(e.state));
+      setIcon(top.bubble, locked ? "lock" : "unlock");
+      el.classList.toggle("on", !locked && !unavailable(e));
+      el.classList.toggle("unavailable", unavailable(e));
+      main.disabled = unavailable(e);
+      main.setAttribute("aria-label", e.name + ", " + top.status.textContent + (locked ? ". Double tap to unlock" : ". Tap to lock"));
+    }
+    main.addEventListener("click", function () {
+      var cur = entities.get(id);
+      if (cur.state === "locked" || cur.state === "jammed") {
+        if (!armed) {
+          armed = true;
+          el.classList.add("armed");
+          paint(cur);
+          armTimer = setTimeout(disarm, 4000);
+          return;
+        }
+        disarm();
+        act(id, "unlock", undefined, function (x) { x.state = "unlocking"; return x; });
+      } else {
+        disarm();
+        act(id, "lock", undefined, function (x) { x.state = "locking"; return x; });
+      }
+    });
+    return {
+      el: el,
+      update: function (e) {
+        if (last && last.state !== e.state && armed) { armed = false; clearTimeout(armTimer); el.classList.remove("armed"); }
+        last = e;
+        paint(e);
+      }
+    };
+  }
+
+  var MODE_LABELS = { off: "Off", heat: "Heat", cool: "Cool", heat_cool: "Auto", auto: "Auto", dry: "Dry", fan_only: "Fan" };
+
+  // Climate: current temperature, target with -/+, and mode chips.
+  function climateTile(e0) {
+    var id = e0.entity_id;
+    var top = head("thermo");
+    var target = h("span", { class: "target", "aria-live": "polite" });
+    var minus = h("button", { class: "icon-btn big", type: "button", "aria-label": "Lower temperature" }, icon("minus"));
+    var plus = h("button", { class: "icon-btn big", type: "button", "aria-label": "Raise temperature" }, icon("plus"));
+    var targetRow = h("div", { class: "row center" }, minus, target, plus);
+    var chips = h("div", { class: "chips", role: "group", "aria-label": "Mode" });
+    var el = h("div", { class: "tile climate wide" }, top.el, targetRow, chips);
+    var pending = null, sendTimer = null, last = e0, chipKey = "";
+
+    function step(e) {
+      var s = Number(e.attributes.target_temp_step);
+      if (s > 0) return s;
+      return /F/.test(e.attributes.temperature_unit || "") ? 1 : 0.5;
+    }
+    function fmt(v, e) {
+      if (typeof v !== "number") return "–";
+      var digits = step(e) < 1 ? 1 : 0;
+      return v.toFixed(digits).replace(/\.0$/, "") + "°";
+    }
+    function nudge(dir) {
+      var e = entities.get(id);
+      var cur = pending !== null ? pending : e.attributes.temperature;
+      if (typeof cur !== "number") return;
+      var s = step(e);
+      var next = Math.round((cur + dir * s) / s) * s;
+      var lo = e.attributes.min_temp, hi = e.attributes.max_temp;
+      if (typeof lo === "number") next = Math.max(lo, next);
+      if (typeof hi === "number") next = Math.min(hi, next);
+      pending = Math.round(next * 100) / 100;
+      paint(e);
+      clearTimeout(sendTimer);
+      sendTimer = setTimeout(function () {
+        var value = pending;
+        act(id, "set_temperature", value, function (x) { x.attributes.temperature = value; return x; })
+          .then(function () { if (pending === value) { pending = null; paint(entities.get(id)); } });
+      }, 700);
+    }
+    minus.addEventListener("click", function () { nudge(-1); });
+    plus.addEventListener("click", function () { nudge(1); });
+
+    function paint(e) {
+      var a = e.attributes;
+      var action = a.hvac_action;
+      var cooling = action === "cooling" || (!action && e.state === "cool");
+      var heating = action === "heating" || (!action && e.state === "heat");
+      top.name.textContent = e.name;
+      var parts = [];
+      parts.push(unavailable(e) ? "Unavailable" : action ? titleCase(action) : (MODE_LABELS[e.state] || titleCase(e.state)));
+      if (typeof a.current_temperature === "number") parts.push("Now " + fmt(a.current_temperature, e));
+      top.status.textContent = parts.join(" · ");
+      el.classList.toggle("cool", cooling);
+      el.classList.toggle("heat", heating);
+      el.classList.toggle("on", heating);
+      el.classList.toggle("unavailable", unavailable(e));
+      var shown = pending !== null ? pending : a.temperature;
+      var canSet = has(e, "set_temperature") && typeof a.temperature === "number";
+      targetRow.classList.toggle("hidden", !canSet);
+      target.textContent = fmt(shown, e);
+      target.setAttribute("aria-label", "Target " + fmt(shown, e));
+      minus.disabled = unavailable(e) || (typeof a.min_temp === "number" && shown <= a.min_temp);
+      plus.disabled = unavailable(e) || (typeof a.max_temp === "number" && shown >= a.max_temp);
+
+      var modes = has(e, "set_hvac_mode") && Array.isArray(a.hvac_modes) ? a.hvac_modes : [];
+      var key = modes.join(",");
+      if (key !== chipKey) {
+        chipKey = key;
+        while (chips.firstChild) chips.removeChild(chips.firstChild);
+        modes.forEach(function (mode) {
+          var chip = h("button", { class: "chip " + (mode === "cool" ? "cool" : mode === "heat" ? "heat" : ""), type: "button", "data-mode": mode, text: MODE_LABELS[mode] || titleCase(mode) });
+          chip.addEventListener("click", function () {
+            act(id, "set_hvac_mode", mode, function (x) { x.state = mode; x.attributes.hvac_action = null; return x; });
+          });
+          chips.appendChild(chip);
+        });
+      }
+      chips.classList.toggle("hidden", !modes.length);
+      Array.prototype.forEach.call(chips.children, function (chip) {
+        chip.setAttribute("aria-pressed", chip.getAttribute("data-mode") === e.state ? "true" : "false");
+        chip.disabled = unavailable(e);
+      });
+    }
+    return { el: el, update: function (e) { last = e; paint(e); } };
+  }
+
+  // Covers: open / stop / close.
+  function coverTile(e0) {
+    var id = e0.entity_id;
+    var top = head("blinds");
+    var buttons = {
+      open: h("button", { class: "icon-btn", type: "button", "aria-label": "Open " + e0.name }, icon("up")),
+      stop: h("button", { class: "icon-btn", type: "button", "aria-label": "Stop " + e0.name }, icon("stop")),
+      close: h("button", { class: "icon-btn", type: "button", "aria-label": "Close " + e0.name }, icon("down"))
+    };
+    var GUESS = { open: "opening", close: "closing", stop: null };
+    Object.keys(buttons).forEach(function (action) {
+      buttons[action].addEventListener("click", function () {
+        act(id, action, undefined, GUESS[action] ? function (x) { x.state = GUESS[action]; return x; } : null);
+      });
+    });
+    var el = h("div", { class: "tile cover" }, top.el, h("div", { class: "row" }, buttons.open, buttons.stop, buttons.close));
+    return {
+      el: el,
+      update: function (e) {
+        var pos = e.attributes.current_position;
+        top.name.textContent = e.name;
+        top.status.textContent = unavailable(e) ? "Unavailable"
+          : titleCase(e.state) + (typeof pos === "number" && e.state === "open" ? " · " + pos + "%" : "");
+        el.classList.toggle("on", e.state === "open" || e.state === "opening");
+        el.classList.toggle("unavailable", unavailable(e));
+        Object.keys(buttons).forEach(function (action) {
+          buttons[action].classList.toggle("hidden", !has(e, action));
+          buttons[action].disabled = unavailable(e);
+        });
+      }
+    };
+  }
+
+  // Media: transport, power, mute and volume.
+  function mediaTile(e0) {
+    var id = e0.entity_id;
+    var top = head("music");
+    var nowPlaying = h("span", { class: "now-playing" });
+    var prev = h("button", { class: "icon-btn", type: "button", "aria-label": "Previous" }, icon("prev"));
+    var play = h("button", { class: "icon-btn big", type: "button", "aria-label": "Play" }, icon("play"));
+    var next = h("button", { class: "icon-btn", type: "button", "aria-label": "Next" }, icon("next"));
+    var mute = h("button", { class: "icon-btn", type: "button", "aria-label": "Mute" }, icon("speaker"));
+    var power = h("button", { class: "icon-btn", type: "button", "aria-label": "Power" }, icon("power"));
+    var volume = slider(e0.name + " volume", 0, 100, 1, function (v) {
+      act(id, "set_volume", v, function (x) { x.attributes.volume_level = v; return x; });
+    }, "%");
+    prev.addEventListener("click", function () { act(id, "previous"); });
+    next.addEventListener("click", function () { act(id, "next"); });
+    play.addEventListener("click", function () {
+      var playing = entities.get(id).state === "playing";
+      act(id, "play_pause", undefined, function (x) { x.state = playing ? "paused" : "playing"; return x; });
+    });
+    mute.addEventListener("click", function () {
+      var muted = !!entities.get(id).attributes.is_volume_muted;
+      act(id, "mute", !muted, function (x) { x.attributes.is_volume_muted = !muted; return x; });
+    });
+    power.addEventListener("click", function () {
+      var off = entities.get(id).state === "off";
+      act(id, off ? "turn_on" : "turn_off", undefined, function (x) { x.state = off ? "on" : "off"; return x; });
+    });
+    var el = h("div", { class: "tile media wide" }, top.el, nowPlaying,
+      h("div", { class: "row" }, prev, play, next, mute, power), volume.el);
+    return {
+      el: el,
+      update: function (e) {
+        var a = e.attributes;
+        var playing = e.state === "playing";
+        var off = e.state === "off" || e.state === "standby";
+        top.name.textContent = e.name;
+        top.status.textContent = unavailable(e) ? "Unavailable" : titleCase(e.state);
+        var title = [a.media_title, a.media_artist].filter(Boolean).join(" — ");
+        nowPlaying.textContent = title;
+        nowPlaying.classList.toggle("hidden", !title || off);
+        el.classList.toggle("on", playing);
+        el.classList.toggle("unavailable", unavailable(e));
+        setIcon(play, playing ? "pause" : "play");
+        play.setAttribute("aria-label", playing ? "Pause" : "Play");
+        setIcon(mute, a.is_volume_muted ? "muted" : "speaker");
+        mute.setAttribute("aria-pressed", a.is_volume_muted ? "true" : "false");
+        power.setAttribute("aria-label", off ? "Turn on" : "Turn off");
+        prev.classList.toggle("hidden", !has(e, "previous") || off);
+        next.classList.toggle("hidden", !has(e, "next") || off);
+        play.classList.toggle("hidden", !has(e, "play_pause") || off);
+        mute.classList.toggle("hidden", !has(e, "mute") || off);
+        power.classList.toggle("hidden", !has(e, off ? "turn_on" : "turn_off"));
+        [prev, play, next, mute, power].forEach(function (b) { b.disabled = unavailable(e); });
+        var showVol = has(e, "set_volume") && !off && typeof a.volume_level === "number";
+        volume.el.classList.toggle("hidden", !showVol);
+        if (showVol) volume.set(a.volume_level);
+      }
+    };
+  }
+
+  // Scenes: one "Run" button.
+  function sceneTile(e0) {
+    var id = e0.entity_id;
+    var top = head("sparkle", true);
+    var run = h("button", { class: "run", type: "button", "aria-label": "Run " + e0.name, text: "Run" });
+    var el = h("div", { class: "tile scene" }, top.el, run);
+    var doneTimer = null;
+    run.addEventListener("click", function () {
+      run.disabled = true;
+      act(id, "activate").then(function (ok) {
+        run.disabled = false;
+        if (!ok) return;
+        top.status.textContent = "Done";
+        el.classList.add("on");
+        clearTimeout(doneTimer);
+        doneTimer = setTimeout(function () { el.classList.remove("on"); top.status.textContent = "Scene"; }, 2000);
+      });
+    });
+    return {
+      el: el,
+      update: function (e) {
+        top.name.textContent = e.name;
+        if (!doneTimer || !el.classList.contains("on")) top.status.textContent = unavailable(e) ? "Unavailable" : "Scene";
+        run.disabled = unavailable(e);
+      }
+    };
+  }
+
+  function infoTile(e0) {
+    var top = head("sparkle");
+    var el = h("div", { class: "tile" }, top.el);
+    return { el: el, update: function (e) { top.name.textContent = e.name; top.status.textContent = titleCase(e.state); } };
+  }
+
+  // ---- live updates -----------------------------------------------------------------------
+  function onEvent(type, data) {
+    if (ended) return;
+    if (type === "state" && data && data.entity_id) {
+      if (!tiles.has(data.entity_id)) { scheduleSessionReload(); return; }
+      entities.set(data.entity_id, data);
+      renderEntity(data.entity_id);
+    } else if (type === "session") {
+      scheduleSessionReload();
+    } else if (type === "ended") {
+      showEnded(data && data.reason);
+    }
+  }
+
+  function parseBlock(block) {
+    var type = "message", data = "";
+    block.split("\n").forEach(function (line) {
+      if (!line || line.charAt(0) === ":") return;
+      var colon = line.indexOf(":");
+      var field = colon < 0 ? line : line.slice(0, colon);
+      var value = colon < 0 ? "" : line.slice(colon + 1);
+      if (value.charAt(0) === " ") value = value.slice(1);
+      if (field === "event") type = value;
+      else if (field === "data") data += (data ? "\n" : "") + value;
+    });
+    if (!data) return;
+    var parsed;
+    try { parsed = JSON.parse(data); } catch (e) { return; }
+    onEvent(type, parsed);
+  }
+
+  // Server-sent events over fetch() (EventSource cannot send the token header).
+  function connectStream() {
+    if (ended || !token) return;
+    clearTimeout(reconnectTimer);
+    if (streamCtrl) { try { streamCtrl.abort(); } catch (e) { /* ignore */ } }
+    var ctrl = typeof AbortController === "function" ? new AbortController() : null;
+    streamCtrl = ctrl;
+    fetch(API + "/guest/events", {
+      headers: { "X-Hearth-Guest": token, "Accept": "text/event-stream" },
+      cache: "no-store",
+      credentials: "omit",
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.json().catch(function () { return null; }).then(function (data) {
+          throw new ApiError(res.status, data);
+        });
+      }
+      if (!res.body || typeof res.body.getReader !== "function" || typeof TextDecoder !== "function") {
+        throw new Error("streaming unsupported");
+      }
+      streamFails = 0;
+      stopPolling();
+      setLive(true);
+      var reader = res.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = "";
+      function pump() {
+        return reader.read().then(function (chunk) {
+          if (chunk.done) return;
+          buffer += decoder.decode(chunk.value, { stream: true }).replace(/\r/g, "");
+          var idx;
+          while ((idx = buffer.indexOf("\n\n")) >= 0) {
+            var block = buffer.slice(0, idx);
+            buffer = buffer.slice(idx + 2);
+            parseBlock(block);
+          }
+          if (!ended) return pump();
+        });
+      }
+      return pump();
+    }).then(function () {
+      streamClosed(ctrl, false);
+    }, function (err) {
+      if (err instanceof ApiError && handleFatal(err)) return;
+      streamClosed(ctrl, true);
+    });
+  }
+
+  function streamClosed(ctrl, failed) {
+    if (ended || (ctrl && ctrl.signal.aborted) || streamCtrl !== ctrl) return;
+    setLive(false);
+    streamFails = failed ? streamFails + 1 : Math.max(streamFails, 1);
+    if (streamFails >= 3) startPolling();
+    var delay = Math.min(30000, 1000 * Math.pow(2, Math.min(streamFails, 5))) * (0.75 + Math.random() * 0.5);
+    reconnectTimer = setTimeout(function () {
+      if (document.hidden && !pollTimer) return; // reconnect when the page is visible again
+      resync();
+    }, delay);
+  }
+
+  function resync() {
+    loadSession().then(connectStream, function (err) {
+      if (handleFatal(err)) return;
+      streamClosed(streamCtrl, true);
+    });
+  }
+
+  function startPolling() {
+    if (pollTimer || ended) return;
+    pollTimer = setInterval(function () {
+      loadSession().catch(function (err) { handleFatal(err); });
+    }, POLL_MS);
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && !ended && session && !live) {
+      clearTimeout(reconnectTimer);
+      resync();
+    }
+  });
+
+  // ---- Android app offer ------------------------------------------------------------------
+  function checkApp() {
+    if (!/Android/i.test(navigator.userAgent || "")) return Promise.resolve();
+    return fetch(API + "/app.json", { cache: "no-store", credentials: "omit" }).then(function (res) {
+      if (res.status !== 200) return;
+      return res.json().then(function (info) {
+        appInfo = info;
+        if (session && !ended) { layoutKey = ""; applySession(session); }
+      });
+    }).catch(function () { /* no app offered */ });
+  }
+
+  // ---- start --------------------------------------------------------------------------------
+  function restart() {
+    ended = false;
+    stopAll();
+    token = token || readToken();
+    if (!token) { showNoCode(); return; }
+    showLoading();
+    layoutKey = "";
+    loadSession().then(function () {
+      connectStream();
+    }, function (err) {
+      if (!handleFatal(err)) showOffline();
+    });
+  }
+
+  setInterval(function () { if (!ended) renderHeader(); }, 30000);
+  checkApp();
+  restart();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "domain": "hearth_guests",
+  "name": "Hearth Guests",
+  "after_dependencies": [
+    "cloud"
+  ],
+  "codeowners": [
+    "@xattribution"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "http",
+    "websocket_api"
+  ],
+  "documentation": "https://github.com/xattribution/hearth-guests",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/xattribution/hearth-guests/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.2.0"
+}

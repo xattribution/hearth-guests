@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Hearth Guests",
+        "description": "Give guests temporary, scoped control of your home from their phone. Passes are created in the Hearth app (Settings → Guests). Guest access works on your local network only."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Hearth Guests is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Hearth Guests",
+        "data": {
+          "lan_only": "Local network only"
+        },
+        "data_description": {
+          "lan_only": "Guests can only use their pass from your home network. Requests from the internet or through Home Assistant Cloud are refused."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "active": {
+        "name": "Active"
+      }
+    }
+  }
+}

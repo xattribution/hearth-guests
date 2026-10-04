@@ -1,0 +1,30 @@
+name: release
+
+# A GitHub release (which HACS offers as an update) whenever manifest.json's version is new.
+on:
+  push:
+    branches: [main]
+    paths: ["custom_components/hearth_guests/manifest.json"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Release the manifest version if it's new
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('custom_components/hearth_guests/manifest.json'))['version'])")
+          tag="v$version"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "$tag already released"
+            exit 0
+          fi
+          gh release create "$tag" --target "$GITHUB_SHA" --title "Hearth Guests $version" --generate-notes

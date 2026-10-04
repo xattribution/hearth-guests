@@ -1,0 +1,8 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# asyncio_* are used by tests/ha (pytest-homeassistant-custom-component). Plain pytest, which
+# runs only the pure tests, does not know them; the filter keeps it quiet about that.
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["ignore:Unknown config option:pytest.PytestConfigWarning"]

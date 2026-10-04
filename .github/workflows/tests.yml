@@ -1,0 +1,48 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # The pure core has no Home Assistant imports, so it runs on older Pythons too.
+  pure:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pip install pytest
+      - run: python -m compileall -q custom_components scripts tests
+      - name: Check the web panel script
+        run: |
+          python scripts/extract_guest_js.py "$RUNNER_TEMP/guest.js"
+          node --check "$RUNNER_TEMP/guest.js"
+      - run: python -m pytest -q
+
+  home-assistant:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements_test.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pip install -r requirements_test.txt
+      - run: python -m pytest -q
