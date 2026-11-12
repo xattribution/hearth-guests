@@ -11,12 +11,12 @@ from typing import Final
 
 DOMAIN: Final = "hearth_guests"
 NAME: Final = "Foyer Guests"
-VERSION: Final = "0.2.1"
+VERSION: Final = "0.3.0"
 
 # Bump together with API.md and the app's GuestApi.kt.
 API_VERSION: Final = 1
 # Additive capabilities clients can check in hearth_guests/info (API.md, "Features").
-FEATURES: Final = ("remote_passes",)
+FEATURES: Final = ("remote_passes", "access_covers_need_locks", "scope_member_check", "web_app")
 
 # Config entry options.
 CONF_LAN_ONLY: Final = "lan_only"
@@ -57,6 +57,17 @@ URL_GUEST_ACTION: Final = "/api/hearth_guests/guest/action"
 URL_APP_INFO: Final = "/api/hearth_guests/app.json"
 URL_APP_APK: Final = "/api/hearth_guests/app.apk"
 URL_OWNER_APK: Final = "/api/hearth_guests/owner/apk"
+URL_WEB_APP: Final = "/foyer"  # Foyer for the web; files under /foyer/
+
+# Content-Security-Policy for Foyer for the web (foyer-web/DESIGN.md section 6). The single
+# source of truth: foyer-web/src/app/csp.ts must hold the same string, and a foyer-web unit
+# test compares the two. The built index.html carries it as a <meta> without frame-ancestors.
+FOYER_CSP: Final = (
+    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; "
+    "media-src 'self' blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; "
+    "frame-ancestors 'self'; base-uri 'none'; form-action 'self'; object-src 'none'; "
+    "require-trusted-types-for 'script'; trusted-types foyer"
+)
 
 # Bus events.
 EVENT_PASS_CREATED: Final = "hearth_guests_pass_created"
@@ -98,6 +109,10 @@ DOMAIN_ACTIONS: Final[dict[str, tuple[str, ...]]] = {
     "scene": ("activate",),
 }
 
+# Covers that let someone into the home (API.md, "Scope" rule 5): garage doors, gates and
+# doors. They resolve only for passes that also grant "locks", never for "covers" alone.
+ACCESS_COVER_CLASSES: Final = frozenset({"garage", "gate", "door"})
+
 CAPABILITIES: Final = tuple(CAPABILITY_DOMAINS)
 SUPPORTED_DOMAINS: Final = frozenset(DOMAIN_ACTIONS)
 
@@ -106,7 +121,10 @@ PRESETS: Final[tuple[dict[str, object], ...]] = (
     {
         "id": "essentials",
         "name": "Guest essentials",
-        "description": "Lights, climate, fans, media, blinds and scenes. No locks.",
+        "description": (
+            "Lights, climate, fans, media, blinds and scenes. "
+            "No locks, garage doors or gates."
+        ),
         "capabilities": ["lights", "climate", "fans", "media", "covers", "scenes"],
         "all_areas": True,
     },

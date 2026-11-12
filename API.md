@@ -53,6 +53,19 @@ Resolution:
    `entity_category` (config or diagnostic) and entities in unsupported domains.
 3. Every entity, including ones listed explicitly, must be in a domain enabled by a capability.
 4. Remove `exclude`.
+5. Covers that let someone in (device class `garage`, `gate` or `door`) need the `locks`
+   capability as well as `covers`. Without `locks` they are left out, including when listed in
+   `entities` or reached through a device. The device class is the entity registry's (the
+   user's override, else the integration's), else the state's `device_class` attribute.
+   Feature `access_covers_need_locks`.
+6. Scenes and groups act on their members (the state's `entity_id` attribute), so each member
+   must pass the same checks as the pass itself: it is not in `exclude`, its domain is enabled
+   by a capability (so a scene that unlocks a door needs `locks`, and one that touches an alarm
+   panel never resolves), and a garage door, gate or door cover member needs `locks` (rule 5).
+   A scene or group reached by area or device expansion also needs every member inside the
+   granted areas or devices (hidden members count; `all_areas` reaches any). One listed in
+   `entities` may reach members anywhere. Checked at resolve time and again for each action.
+   Feature `scope_member_check`.
 
 | capability | domains | actions |
 |---|---|---|
@@ -61,7 +74,7 @@ Resolution:
 | `fans` | `fan` | `turn_on`, `turn_off`, `toggle`, `set_percentage` (0–100) |
 | `climate` | `climate` | `set_temperature` (number, clamped to the entity's min_temp…max_temp), `set_hvac_mode` (must be one of the entity's `hvac_modes`), `turn_on`, `turn_off` |
 | `locks` | `lock` | `lock`, `unlock` |
-| `covers` | `cover` | `open`, `close`, `stop`, `set_position` (0–100) |
+| `covers` | `cover` | `open`, `close`, `stop`, `set_position` (0–100). Blinds, shades, awnings, windows and the like; garage doors, gates and doors also need `locks` (rule 5) |
 | `media` | `media_player` | `turn_on`, `turn_off`, `play_pause`, `next`, `previous`, `set_volume` (0–100), `mute` (bool) |
 | `scenes` | `scene` | `activate` |
 
@@ -78,7 +91,8 @@ sensors' raw data, or anything else.
 | `lights_only` | Just the lights | lights | true |
 
 A preset is a starting point. The app copies its capabilities into the scope, and the owner
-then narrows the areas and devices.
+then narrows the areas and devices. `essentials` grants `covers` without `locks`, so it reaches
+blinds and shades but never garage doors or gates (rule 5).
 
 ## Pass object (owner view)
 
@@ -117,7 +131,7 @@ All commands need an admin user (`websocket_api.require_admin`).
 
 | type | payload | result |
 |---|---|---|
-| `hearth_guests/info` | none | `{api_version, version, lan_only, guest_base_url, remote_base_url, features: ["remote_passes"], apk: {version_name, version_code, size, sha256, uploaded_at} \| null, presets: [{id, name, description, capabilities, all_areas}], active_count}` |
+| `hearth_guests/info` | none | `{api_version, version, lan_only, guest_base_url, remote_base_url, features: ["remote_passes", "access_covers_need_locks", "scope_member_check", "web_app"], apk: {version_name, version_code, size, sha256, uploaded_at} \| null, presets: [{id, name, description, capabilities, all_areas}], active_count}` |
 | `hearth_guests/passes/list` | `{base_url?}` | `{passes: [Pass]}`, newest first |
 | `hearth_guests/passes/create` | `{name, scope, expires_at? (ISO or null), duration_minutes?, remote? (default false), base_url?}` | `{pass}` |
 | `hearth_guests/passes/update` | `{pass_id, name?, scope?, expires_at? (ISO or null = permanent), active?, remote?, base_url?}` | `{pass}`. Turning `remote` off closes the pass's open streams; they reconnect and the LAN check applies. |
@@ -206,6 +220,25 @@ an action that is not listed is refused with `not_allowed`.
 Nothing else is passed through. In particular there are no entity pictures, no tokens and
 no user data.
 
+## Foyer for the web: static files
+
+The integration serves Foyer for the web, a prebuilt web app for Home Assistant users (not
+guests). These routes need no auth and are not LAN only: the files hold no data, and the app
+signs in with Home Assistant's own OAuth and uses the normal websocket API with that user's
+rights. Only files listed from `www/foyer` at startup are served; anything else is 404. Each
+route answers `GET` and `HEAD`.
+
+| method & path | auth | description |
+|---|---|---|
+| `GET /foyer` | none | 302 to `/foyer/`, keeping the query string |
+| `GET /foyer/`, `GET /foyer/index.html` | none | The app (`text/html`, `Cache-Control: no-cache`) with `Content-Security-Policy` (`FOYER_CSP` in `const.py`), `Permissions-Policy`, `Cross-Origin-Opener-Policy: same-origin`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff` |
+| `GET /foyer/sw.js`, `/foyer/boot.js`, `/foyer/manifest.webmanifest`, `/foyer/licenses.txt` | none | `Cache-Control: no-cache` (`sw.js` also carries the CSP) |
+| `GET /foyer/assets/<name>-<hash>.<ext>` | none | `Cache-Control: public, max-age=31536000, immutable` |
+| `GET /foyer/icons/<file>` | none | `Cache-Control: public, max-age=86400` |
+
+Precompressed `.br` and `.gz` siblings are sent when `Accept-Encoding` allows (never under their
+own names). Without a build, every `/foyer/` path answers 503.
+
 ## Deep link and QR
 
 - The QR encodes the landing URL: `http://<lan-host>:8123/hearth-guest#t=<token>`. Scanned
@@ -223,6 +256,9 @@ integration supports without bumping `API_VERSION`:
 | feature | meaning |
 |---|---|
 | `remote_passes` | passes accept `remote`; `remote_link` and `remote_base_url` are reported |
+| `access_covers_need_locks` | scope rule 5: garage door, gate and door covers resolve only with `locks`. Older integrations without it let `covers` reach them |
+| `scope_member_check` | scope rule 6: scenes and groups resolve only when every member is within the pass. Older integrations without it let a scene or group act on anything |
+| `web_app` | the integration serves Foyer for the web at `/foyer/` (see "Foyer for the web: static files") |
 
 ## Bus events (for automations)
 

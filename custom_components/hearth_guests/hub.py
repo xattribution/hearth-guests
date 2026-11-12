@@ -208,7 +208,24 @@ class GuestHub:
     def snapshot(self) -> RegistrySnapshot:
         """Snapshot the entity, device and area registries plus state-only entities."""
         records: dict[str, EntityRecord] = {}
+
+        def state_class(entity_id: str) -> str | None:
+            state = self.hass.states.get(entity_id)
+            value = state.attributes.get("device_class") if state else None
+            return str(value) if value else None
+
+        def members(entity_id: str) -> tuple[str, ...]:
+            # Scenes and groups list what they act on in `entity_id` (scope rule 6).
+            state = self.hass.states.get(entity_id)
+            value = state.attributes.get("entity_id") if state else None
+            if isinstance(value, str):
+                return (value,)
+            if isinstance(value, list | tuple):
+                return tuple(str(v) for v in value if isinstance(v, str))
+            return ()
+
         for entry in er.async_get(self.hass).entities.values():
+            device_class = entry.device_class or entry.original_device_class
             records[entry.entity_id] = EntityRecord(
                 entity_id=entry.entity_id,
                 area_id=entry.area_id,
@@ -218,10 +235,18 @@ class GuestHub:
                 entity_category=(
                     str(entry.entity_category) if entry.entity_category else None
                 ),
+                device_class=(
+                    str(device_class) if device_class else state_class(entry.entity_id)
+                ),
+                members=members(entry.entity_id),
             )
         for entity_id in self.hass.states.async_entity_ids():
             if entity_id not in records:
-                records[entity_id] = EntityRecord(entity_id=entity_id)
+                records[entity_id] = EntityRecord(
+                    entity_id=entity_id,
+                    device_class=state_class(entity_id),
+                    members=members(entity_id),
+                )
         return RegistrySnapshot(
             entities=records,
             device_areas={

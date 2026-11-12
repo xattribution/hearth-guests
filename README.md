@@ -42,6 +42,9 @@ The contract between the integration, the Foyer app and the web panel is in
   are refused before any token is checked and the panel isn't served off the LAN at all.
 - The panel is a single file with a strict Content-Security-Policy (`connect-src 'self'`, no
   external requests) and `Referrer-Policy: no-referrer`.
+- **Foyer for the web** (`/foyer/`) is a separate, static web app for Home Assistant users, not
+  guests. Its files hold no data, so they are served without login and not LAN only; the app
+  signs in with Home Assistant's own OAuth (see "Foyer for the web" below).
 
 ## Install
 
@@ -75,7 +78,8 @@ You need Home Assistant 2025.3 or newer (tested against 2026.2).
 
 In the Foyer app, open **Settings → Guests**. Pick a preset (*Guest essentials*,
 *Door & lights*, *House sitter*, *Just the lights*), narrow it to the rooms and devices you
-want, set an end time, and show the QR code. From the same screen you can pause, extend,
+want, set an end time, and show the QR code. *Blinds & shades* covers blinds, shades and
+awnings; garage doors and gates only come with a pass that can also use *Locks*. From the same screen you can pause, extend,
 rotate or delete a pass, and see what guests did. Only Home Assistant admins can manage passes.
 
 ### The web panel
@@ -101,6 +105,25 @@ local network URL under **Settings → System → Network** in Home Assistant.
 Foyer can upload its own APK to the integration from its guest settings (an admin-only,
 chunked upload; see `API.md`). Android guests then see **Get the Android app** and **Open in Foyer** buttons in the web panel. The APK
 is stored under `/config/.storage/hearth_guests/` and served only on the LAN.
+
+### Foyer for the web (`/foyer/`)
+
+The integration also serves **Foyer for the web**, an iPhone and iPad web app for you (the
+owner, or anyone with a Home Assistant account), not for guests. Open
+`https://<your Home Assistant>/foyer/` in Safari, tap **Share → Add to Home Screen**, then sign
+in with your Home Assistant account. Use the address you use away from home (Home Assistant
+Cloud or your own HTTPS URL) so the icon works everywhere; HTTPS is needed for the offline app
+shell and update prompt.
+
+- The files are a static app shell with no data, so `/foyer/` needs no login and is **not** LAN
+  only, like Home Assistant's own frontend files. The app then signs in with Home Assistant's own
+  OAuth and can do exactly what your Home Assistant user can. Guest passes never reach it.
+- It is sent with a strict Content-Security-Policy (no external requests at all),
+  `Referrer-Policy: no-referrer` and `X-Content-Type-Options: nosniff`. Only the files of the
+  build are served; other paths get 404.
+- The app ships prebuilt in `custom_components/hearth_guests/www/foyer/`, so HACS updates bring
+  it along. If that folder is missing, `/foyer/` answers 503 and everything else works as
+  before.
 
 ## Automations
 
@@ -161,9 +184,11 @@ custom_components/hearth_guests/
   passes.py, scope.py, ratelimit.py, netcheck.py, apk.py   pure Python core, no HA imports
   hub.py        runtime: storage, expiry timer, streams, activity
   views.py      guest HTTP API, landing page, APK sharing
+  webapp.py, webapp_files.py   Foyer for the web at /foyer/ (file table is pure)
   websocket.py  owner API (admin websocket commands)
   sensor.py, config_flow.py, const.py
   www/guest.html  the web panel (one file, no dependencies)
+  www/foyer/      Foyer for the web, prebuilt (built from the monorepo's foyer-web/; don't edit)
 tests/          pure tests (plain pytest, Python 3.11+)
 tests/ha/       tests against a real Home Assistant (pytest-homeassistant-custom-component)
 ```

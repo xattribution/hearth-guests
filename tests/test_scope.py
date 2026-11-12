@@ -428,3 +428,139 @@ def test_translate_not_allowed(
     with pytest.raises(ActionError) as err:
         translate_action(entity_id, attributes, action, None)
     assert err.value.code == "not_allowed"
+
+
+def _covers_home() -> RegistrySnapshot:
+    return RegistrySnapshot.build(
+        entities=[
+            {"entity_id": "cover.blinds", "area_id": "living", "device_class": "shade"},
+            {"entity_id": "cover.awning", "area_id": "living"},
+            {"entity_id": "cover.garage", "area_id": "garage", "device_class": "garage"},
+            {"entity_id": "cover.gate", "device_id": "dev_gate", "device_class": "gate"},
+            {"entity_id": "cover.patio", "area_id": "living", "device_class": "door"},
+        ],
+        devices=[{"id": "dev_gate", "area_id": "drive"}],
+        areas={"living": "Living room", "garage": "Garage", "drive": "Drive"},
+    )
+
+
+def test_covers_alone_never_reach_garage_doors_or_gates() -> None:
+    """Rule 5: "Blinds & shades" can't open the garage, a gate or a door cover."""
+    scope = Scope(
+        capabilities=("covers",),
+        all_areas=True,
+        devices=("dev_gate",),
+        entities=("cover.garage", "cover.gate"),  # even listed explicitly
+    )
+    assert list(resolve_scope(scope, _covers_home())) == ["cover.awning", "cover.blinds"]
+
+
+def test_locks_grant_access_covers() -> None:
+    """With locks too, garage doors, gates and door covers resolve."""
+    scope = Scope(capabilities=("covers", "locks"), all_areas=True)
+    assert list(resolve_scope(scope, _covers_home())) == [
+        "cover.awning",
+        "cover.blinds",
+        "cover.garage",
+        "cover.gate",
+        "cover.patio",
+    ]
+
+
+def test_essentials_preset_has_no_way_in() -> None:
+    """The "Guest essentials" preset reaches blinds but no garage door, gate or door."""
+    essentials = next(p for p in PRESETS if p["id"] == "essentials")
+    scope = Scope.from_dict(
+        {
+            "capabilities": essentials["capabilities"],
+            "all_areas": essentials["all_areas"],
+        }
+    )
+    resolved = resolve_scope(scope, _covers_home())
+    assert "cover.garage" not in resolved
+    assert "cover.gate" not in resolved
+    assert "cover.patio" not in resolved
+    assert "cover.blinds" in resolved
+    assert "garage doors or gates" in str(essentials["description"])
+
+
+def _scenes_home() -> RegistrySnapshot:
+    return RegistrySnapshot.build(
+        entities=[
+            {"entity_id": "light.living", "area_id": "living"},
+            {"entity_id": "light.office", "area_id": "office"},
+            {"entity_id": "light.hidden_member", "area_id": "living", "hidden": True},
+            {"entity_id": "lock.front", "area_id": "hall"},
+            {"entity_id": "cover.garage", "area_id": "garage", "device_class": "garage"},
+            {"entity_id": "cover.blinds", "area_id": "living", "device_class": "shade"},
+            {"entity_id": "alarm_control_panel.home", "area_id": "hall"},
+            {
+                "entity_id": "scene.movie",
+                "area_id": "living",
+                "members": ("light.living", "cover.blinds"),
+            },
+            {
+                "entity_id": "scene.arrive",
+                "area_id": "living",
+                "members": ("light.living", "lock.front"),
+            },
+            {
+                "entity_id": "scene.away",
+                "area_id": "living",
+                "members": ("light.living", "alarm_control_panel.home"),
+            },
+            {
+                "entity_id": "scene.garage",
+                "area_id": "living",
+                "members": ("light.living", "cover.garage"),
+            },
+            {
+                "entity_id": "light.everywhere",
+                "area_id": "living",
+                "members": ("light.living", "light.office"),
+            },
+            {
+                "entity_id": "light.living_group",
+                "area_id": "living",
+                "members": ("light.living", "light.hidden_member"),
+            },
+        ],
+        areas={"living": "Living", "office": "Office", "hall": "Hall", "garage": "Garage"},
+    )
+
+
+def test_scenes_never_reach_past_the_pass() -> None:
+    """Rule 6: a scene that unlocks, disarms or opens the garage needs those rights itself."""
+    scope = Scope(capabilities=("lights", "covers", "scenes"), areas=("living",))
+    resolved = resolve_scope(scope, _scenes_home())
+    assert "scene.movie" in resolved
+    assert "scene.arrive" not in resolved  # a lock, without "locks"
+    assert "scene.away" not in resolved  # alarm panels are never in scope
+    assert "scene.garage" not in resolved  # an access cover, without "locks"
+
+
+def test_groups_stay_inside_the_granted_areas() -> None:
+    """Rule 6: a light group in a granted room can't switch lights in other rooms."""
+    scope = Scope(capabilities=("lights",), areas=("living",))
+    resolved = resolve_scope(scope, _scenes_home())
+    assert "light.everywhere" not in resolved
+    # Hidden members (grouped lights are often hidden) still count as in the room.
+    assert "light.living_group" in resolved
+    assert "light.everywhere" in resolve_scope(
+        Scope(capabilities=("lights",), all_areas=True), _scenes_home()
+    )
+
+
+def test_explicit_groups_keep_their_members_rooms_but_not_their_rights() -> None:
+    """Listed explicitly, a group may reach other rooms; members still need the capability."""
+    snapshot = _scenes_home()
+    listed = Scope(capabilities=("lights",), entities=("light.everywhere",))
+    assert "light.everywhere" in resolve_scope(listed, snapshot)
+    excluded = Scope(
+        capabilities=("lights",),
+        entities=("light.everywhere",),
+        exclude=("light.office",),
+    )
+    assert "light.everywhere" not in resolve_scope(excluded, snapshot)
+    scene = Scope(capabilities=("lights", "scenes"), entities=("scene.arrive",))
+    assert resolve_scope(scene, snapshot) == {}

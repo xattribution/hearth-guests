@@ -12,7 +12,13 @@ from dataclasses import dataclass, field
 import math
 from typing import Any
 
-from .const import CAPABILITIES, CAPABILITY_DOMAINS, DOMAIN_ACTIONS, SUPPORTED_DOMAINS
+from .const import (
+    ACCESS_COVER_CLASSES,
+    CAPABILITIES,
+    CAPABILITY_DOMAINS,
+    DOMAIN_ACTIONS,
+    SUPPORTED_DOMAINS,
+)
 
 MAX_SCOPE_ITEMS = 2000
 MAX_ID_LENGTH = 255
@@ -170,11 +176,21 @@ class EntityRecord:
     disabled: bool = False
     hidden: bool = False
     entity_category: str | None = None
+    # The effective device class (the user's override, else the integration's, else the
+    # state's). Used to keep garage doors and gates out of "covers" (rule 5).
+    device_class: str | None = None
+    # What a scene or group controls: its state's `entity_id` attribute (rule 6).
+    members: tuple[str, ...] = ()
 
     @property
     def domain(self) -> str:
         """Entity domain."""
         return split_entity_id(self.entity_id)[0]
+
+    @property
+    def is_access_cover(self) -> bool:
+        """A garage door, gate or door cover: opening it lets someone in."""
+        return self.domain == "cover" and self.device_class in ACCESS_COVER_CLASSES
 
 
 @dataclass(slots=True)
@@ -217,8 +233,9 @@ class RegistrySnapshot:
 
 
 def resolve_scope(scope: Scope, snapshot: RegistrySnapshot) -> dict[str, str | None]:
-    """Resolve a scope to {entity_id: area_id}, sorted by entity id (API.md rules 1-4)."""
+    """Resolve a scope to {entity_id: area_id}, sorted by entity id (API.md rules 1-5)."""
     domains = scope.domains
+    grants_entry = "locks" in scope.capabilities
     explicit = set(scope.entities)
     devices = set(scope.devices)
     areas = set(scope.areas)
@@ -229,6 +246,8 @@ def resolve_scope(scope: Scope, snapshot: RegistrySnapshot) -> dict[str, str | N
         entity_id = record.entity_id
         if entity_id in excluded or record.domain not in domains:
             continue  # Rules 3 and 4.
+        if record.is_access_cover and not grants_entry:
+            continue  # Rule 5, explicit entities included.
         area_id = snapshot.area_of(record)
         if entity_id in explicit:
             resolved[entity_id] = area_id
@@ -245,6 +264,37 @@ def resolve_scope(scope: Scope, snapshot: RegistrySnapshot) -> dict[str, str | N
             area_id is not None and (scope.all_areas or area_id in areas)
         ):
             resolved[entity_id] = area_id
+
+    # Rule 6: a scene or group acts on its members, so it may only reach what the pass itself
+    # could. Membership is not transitive here on purpose: one level is what HA acts on.
+    def member_allowed(member: str, via_expansion: bool) -> bool:
+        if member in excluded:
+            return False
+        record = snapshot.entities.get(member)
+        domain = record.domain if record else split_entity_id(member)[0]
+        if domain not in domains:
+            return False  # Includes locks without `locks` and every alarm panel.
+        if domain == "cover" and not grants_entry and (record is None or record.is_access_cover):
+            return False  # An unknown cover could be a garage door: rule 5 applies.
+        if not via_expansion:
+            return True  # Listed explicitly: the owner chose it, wherever its members are.
+        if record is None:
+            return scope.all_areas
+        member_area = snapshot.area_of(record)
+        return (
+            member in explicit
+            or (record.device_id is not None and record.device_id in devices)
+            or scope.all_areas
+            or (member_area is not None and member_area in areas)
+        )
+
+    for entity_id in list(resolved):
+        members = snapshot.entities[entity_id].members
+        if not members:
+            continue
+        via_expansion = entity_id not in explicit
+        if not all(member_allowed(m, via_expansion) for m in members):
+            del resolved[entity_id]
 
     return dict(sorted(resolved.items()))
 

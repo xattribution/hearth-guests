@@ -17,6 +17,7 @@ from pytest_homeassistant_custom_component.common import (
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util import dt as dt_util
 
@@ -215,6 +216,44 @@ async def test_preview(ws: WsCall, home: dict) -> None:
     climate = entities[home["climate"]]
     assert climate["attributes"]["temperature_unit"] == "°C"
     assert "supported_features" not in climate["attributes"]
+
+
+async def test_garage_doors_need_locks(
+    hass: HomeAssistant, ws: WsCall, home: dict
+) -> None:
+    """Scope rule 5: covers alone reach blinds, not a garage door or gate (registry or state class)."""
+    ent_reg = er.async_get(hass)
+    blinds = ent_reg.async_get_or_create(
+        "cover", "test", "blinds", suggested_object_id="blinds", original_device_class="shade"
+    ).entity_id
+    garage = ent_reg.async_get_or_create(
+        "cover", "test", "garage", suggested_object_id="garage", original_device_class="garage"
+    ).entity_id
+    for entity_id in (blinds, garage):
+        ent_reg.async_update_entity(entity_id, area_id=home["living"])
+    hass.states.async_set(blinds, "closed", {"device_class": "shade"})
+    hass.states.async_set(garage, "closed", {"device_class": "garage"})
+    # A state-only gate (no registry entry): its class comes from the state.
+    hass.states.async_set("cover.gate", "closed", {"device_class": "gate"})
+
+    async def preview(capabilities: list[str]) -> set[str]:
+        msg = await ws(
+            {
+                "type": "hearth_guests/preview",
+                "scope": {
+                    "capabilities": capabilities,
+                    "all_areas": True,
+                    "entities": ["cover.gate", garage],
+                },
+            }
+        )
+        return {e["entity_id"] for e in msg["result"]["entities"]}
+
+    assert await preview(["covers"]) == {blinds}
+    assert {blinds, garage, "cover.gate"} <= await preview(["covers", "locks"])
+    info = await ws({"type": "hearth_guests/info"})
+    assert "access_covers_need_locks" in info["result"]["features"]
+    assert "web_app" in info["result"]["features"]
 
 
 async def test_expiry_timer(

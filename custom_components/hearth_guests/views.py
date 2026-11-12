@@ -1,5 +1,7 @@
 """HTTP views: the guest API, the landing page and APK sharing (API.md, "Guest API").
 
+Foyer for the web (/foyer/) lives in webapp.py and is registered here too.
+
 Guest endpoints do not use Home Assistant auth (`requires_auth = False`); they authenticate
 with the pass token in the X-Hearth-Guest header and are checked against the pass scope on
 every request. Views are registered once per HA run and look the hub up per request, so
@@ -43,6 +45,7 @@ from .hub import GuestHub, get_hub
 from .netcheck import is_lan_address
 from .passes import STATUS_EXPIRED, STATUS_PAUSED, Pass
 from .scope import ActionError
+from .webapp import FoyerAppView, FoyerRedirectView
 
 try:  # Present in current Home Assistant; guarded so an older core fails closed.
     from homeassistant.helpers.network import is_cloud_connection
@@ -81,6 +84,8 @@ def async_register_views(hass: HomeAssistant) -> None:
         AppInfoView(),
         AppApkView(),
         OwnerApkUploadView(),
+        FoyerRedirectView(),
+        FoyerAppView(),
     ):
         hass.http.register_view(view)
 
